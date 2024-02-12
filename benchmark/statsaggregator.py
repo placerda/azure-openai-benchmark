@@ -130,11 +130,13 @@ class _StatsAggregator(threading.Thread):
    def _dump(self):
       with self.lock:
          run_seconds = round(time.time() - self.start_time)
+         # Use dynamic aggregation window for when elapsed duration < window_duration
+         dynamic_window = min(run_seconds, self.window_duration)
          timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
          e2e_latency_avg = round(np.average(self.request_latency._values()), 3) if self.request_latency._len() > 0 else "n/a"
          e2e_latency_95th = round(np.percentile(self.request_latency._values(), 95), 3) if self.request_latency._len() > 1 else "n/a"
-         context_per_minute = round(60.0 * np.sum(self.context_tokens._values()) / self.window_duration, 0) if self.context_tokens._len() > 0 else "n/a"
-         gen_per_minute = round(60.0 * np.sum(self.generated_tokens._values()) / self.window_duration, 0) if self.generated_tokens._len() > 0 else "n/a"
+         context_per_minute = round(60.0 * np.sum(self.context_tokens._values()) / dynamic_window, 0) if self.context_tokens._len() > 0 else "n/a"
+         gen_per_minute = round(60.0 * np.sum(self.generated_tokens._values()) / dynamic_window, 0) if self.generated_tokens._len() > 0 else "n/a"
          tokens_per_minute = 0
          if context_per_minute != "n/a":
             tokens_per_minute += context_per_minute
