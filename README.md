@@ -121,12 +121,32 @@ $ cat mychatcontext.json | python -m benchmark.bench tokenize \
 tokens: 65
 ```
 
-## Contibutions
+## Contibuted modules
 **Extract and Combine JSON logs to CSV**
 
 The `combine_logs` CLI can be used to load and combine the logs from multiple runs into a single CSV, ready for comparison and analysis. This tool extracts the run arguments as well as the final set of stats prior to the run ending (either by termination or hitting the request/duration limit).
 ```
 $ python -m benchmark.contrib.combine_logs logs/ combined_logs.csv --load-recursive
+```
+
+**Run Batches of Multiple Configurations**
+
+The `batch_runner` CLI can be used to run batches of benchmark runs back-to-back. Currently, this CLI only works for runs where `context-generation-method = generation`. The CLI also includes a `--start-ptum-runs-at-full-utilization` argument (default=`true`), which will warm up any PTU-M model endpoints to 100% utilization prior to testing, which is critical for ensuring that test results reflect accurate real-world performance. 
+
+To use the CLI, create a list of token profile and rate combinations to be used, and then select the number of batches and interval to be used between each batch. When using the batch runner, make sure to execute the command from the root directory of the repo.
+
+Example - Run a single batch of the following two configuration for 120 seconds each, making sure to warm up the PTU-M endpoint prior to each run:
+- context_tokens=500,  max_tokens=100, rate=20
+- context_tokens=3500, max_tokens=300, rate=7.5
+
+```
+$ python -m benchmark.contrib.batch_runner https://gbb-ea-openai-swedencentral-01.openai.azure.com/ --deployment gpt-4-1106-ptu --token-rate-workload-list 500-100-20,3500-300-7.5 --duration 130 --aggregation-window 120 --log-save-dir logs/ --start-ptum-runs-at-full-utilization true
+```
+
+Example - Run the same batch as above, but 5x times and with a 1 hour delay between the start of each batch:
+
+```
+$ python -m benchmark.contrib.batch_runner https://gbb-ea-openai-swedencentral-01.openai.azure.com/ --deployment gpt-4-1106-ptu --token-rate-workload-list 500-100-20,3500-300-7.5 --duration 130 --aggregation-window 120 --log-save-dir logs/ --start-ptum-runs-at-full-utilization true --num-batches 5 --batch-start-interval 3600
 ```
 
 ## Configuration Option Details
