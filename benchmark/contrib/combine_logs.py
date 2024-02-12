@@ -45,27 +45,28 @@ def extract_run_info_from_log_path(log_file: str) -> Optional[dict]:
     run_args = None
     last_logged_stats = None
     early_terminated = False
-    lines_since_request_draining = 0
+    is_draining_commenced = False
     # Process lines, including only info BEFORE early termination (for terminated sessions), or the final log AFFTER requests start to drain (for valid sessions)
     with open(log_file) as f:
         for line in f.readlines():
             if "got terminate signal" in line:
-                # Ignore any stats after termination or draining of requests (since RPM, TPM, rate etc will start to decline as requests gradually finish)
+                # Ignore any stats after early termination (since RPM, TPM, rate etc will start to decline as requests gradually finish)
+                early_terminated = True
                 break
             # Save most recent line
             if "Load" in line:
                 run_args = json.loads(line.split("Load test args: ")[-1])
             if "run_seconds" in line:
                 last_logged_stats = line
-            if lines_since_request_draining == 1:
+            if is_draining_commenced:
                 # Previous line was draining, use this line as the last set of valid stats
                 break
             if "requests to drain" in line:
                 # Current line is draining, next line is the last set of valid stats. Allow one more line to be processed.
-                lines_since_request_draining += 1
+                is_draining_commenced = True
     if not run_args:
         logging.error(
-            f"Could not extract run args from log file {log_file} - missing run info (it might have been generated with a previous code version)."
+            f"Could not extract run args from log file {log_file} - missing run info (it might have been generated with a previous code version, or with output-version = human)."
         )
         return None
     run_args["early_terminated"] = early_terminated
