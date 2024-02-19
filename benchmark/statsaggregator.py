@@ -152,7 +152,7 @@ class _StatsAggregator(threading.Thread):
          tbt_95th = round(np.percentile(self.token_latencies._values(), 95), 3) if self.token_latencies._len() > 1 else "n/a"
          util_avg = f"{round(np.average(self.utilizations._values()), 1)}%" if self.utilizations._len() > 0 else "n/a"
          util_95th = f"{round(np.percentile(self.utilizations._values(), 95), 1)}%" if self.utilizations._len() > 1 else "n/a"
-         rpm = round(60.0 * self.request_timestamps._len() / self.window_duration, 1)  if self.request_timestamps._len() > 0 else "n/a"
+         rpm = round(60.0 * self.request_timestamps._len() / dynamic_window, 1)  if self.request_timestamps._len() > 0 else "n/a"
          # Periodically warn if generated TPR is consistently lower than requested, which can result in higher scores for RPM compared to reality
          warning_period_secs = 10
          if all((
