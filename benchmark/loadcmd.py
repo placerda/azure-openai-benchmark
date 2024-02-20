@@ -193,8 +193,13 @@ def _run_load(
         except Exception as e:
             print(e)
 
+    def finish_run_func():
+      """Function to run when run is finished."""
+      nonlocal aggregator
+      aggregator.dump_raw_call_stats()
+
     executer = AsyncHTTPExecuter(
-        request_func, rate_limiter=rate_limiter, max_concurrency=max_concurrency
+        request_func, rate_limiter=rate_limiter, max_concurrency=max_concurrency, finish_run_func=finish_run_func
     )
 
     aggregator.start()
