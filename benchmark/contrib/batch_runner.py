@@ -405,7 +405,7 @@ def main():
                 f"Invalid workload-token-profile '{item}'. Expected format: <context-tokens>-<max-tokens>-<rate> - e.g. 500-100-8.5."
             )
         context_tokens = int(split_vals[0])
-        max_tokens = int(split_vals[0])
+        max_tokens = int(split_vals[1])
         if split_vals[2].lower() == "none":
             rate = "none"
         else:
