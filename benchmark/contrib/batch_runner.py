@@ -180,7 +180,7 @@ def context_generation_run_to_exec_str(
         f"python3 -m benchmark.bench load {api_base_endpoint} --deployment {deployment} --context-tokens {context_tokens}"
         f" --max-tokens {max_tokens} --output-format jsonl --aggregation-window {aggregation_window} --clients {clients} "
         f"--prevent-server-caching {prevent_server_caching} --retry {retry} --api-key-env {api_key_env} "
-        " --context-generation-method generate"
+        " --context-generation-method generate --shape custom"
     )
     # Add optionals
     if rate is not None:
