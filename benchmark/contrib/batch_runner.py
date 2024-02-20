@@ -389,7 +389,7 @@ def run_context_generation_batch(
         run_benchmark_exec_str(
             exec_str=benchmark_exec_str,
             print_terminal_output=True,
-            kill_when_draining_begins=True,
+            kill_when_draining_begins=False,
             kill_at_100_util=False,
         )
 
