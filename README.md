@@ -125,14 +125,20 @@ tokens: 65
 ## Contibuted modules
 **Extract and Combine JSON logs to CSV**
 
-The `combine_logs` CLI can be used to load and combine the logs from multiple runs into a single CSV, ready for comparison and analysis. This tool extracts the run arguments as well as the final set of stats prior to the run ending (either by termination or hitting the request/duration limit).
+The `combine_logs` CLI can be used to load and combine the logs from multiple runs into a single CSV, ready for comparison and analysis. This tool extracts the run arguments, a valid set of aggregate statistics (as determined by `--stat-extraction-point`), and all raw request statistics of requests within the aggregation window at the end of the run. The `--load-recursive` arg will search not only in the provided directory, but all subdirectories as well.
+
+Note: The core benchmarking tool waits for any incomplete requests to 'drain' when the end of the run is reached, without replacing these requests with new ones. This can mean that overall TPM and RPM can begin to drop after the draining point as all remaining requests slowly finish, dragging the average TPM and RPM statistics down. For this reason, it is recommended to use `--stat-extraction-point draining` to extract the aggregate statistcs that were logged when draining began (and prior to any reduction in throughput). If however you are more interested in latency values and do not care about the RPM and TPM values, use `--stat-extraction-point final`, which will extract the very last line of logged statistics (which should include all completed requests that are still within the aggregation window).
 ```
-$ python -m benchmark.contrib.combine_logs logs/ combined_logs.csv --load-recursive
+# Extract stats that were logged when the duration/requests limit was reached
+$ python -m benchmark.contrib.combine_logs logs/ combined_logs.csv --load-recursive --stat-extraction-point draining
+
+# Extract the very last line of logs, after the very last request has finished
+$ python -m benchmark.contrib.combine_logs logs/ combined_logs.csv --load-recursive --stat-extraction-point final
 ```
 
 **Run Batches of Multiple Configurations**
 
-The `batch_runner` CLI can be used to run batches of benchmark runs back-to-back. Currently, this CLI only works for runs where `context-generation-method = generation`. The CLI also includes a `--start-ptum-runs-at-full-utilization` argument (default=`true`), which will warm up any PTU-M model endpoints to 100% utilization prior to testing, which is critical for ensuring that test results reflect accurate real-world performance. 
+The `batch_runner` CLI can be used to run batches of benchmark runs back-to-back. Currently, this CLI only works for runs where `context-generation-method = generation`. The CLI also includes a `--start-ptum-runs-at-full-utilization` argument (default=`true`), which will warm up any PTU-M model endpoints to 100% utilization prior to testing, which is critical for ensuring that test results reflect accurate real-world performance and is enabled by default. To see the full list of args which can be used for all runs in each batch, run `python -m benchmark.contrib.batch_runner -h`.
 
 To use the CLI, create a list of token profile and rate combinations to be used, and then select the number of batches and interval to be used between each batch. When using the batch runner, make sure to execute the command from the root directory of the repo.
 

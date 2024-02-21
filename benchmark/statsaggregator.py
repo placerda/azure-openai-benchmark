@@ -78,12 +78,12 @@ class _StatsAggregator(threading.Thread):
    def dump_raw_call_stats(self):
       """Dumps raw stats for each individual call within the aggregation window"""
       samples = {
-         "request_timestamps": self.request_timestamps._values(),
-         "request_latency": self.request_latency._values(),
+         "request_timestamps": [round(val, 4) for val in self.request_timestamps._values()],
+         "request_latency": [round(val, 4) for val in self.request_latency._values()],
          "call_tries": self.call_tries._values(),
-         "response_latencies": self.response_latencies._values(),
-         "first_token_latencies": self.first_token_latencies._values(),
-         "token_latencies": self.token_latencies._values(),
+         "response_latencies": [round(val, 4) for val in self.response_latencies._values()],
+         "first_token_latencies": [round(val, 4) for val in self.first_token_latencies._values()],
+         "token_latencies": [round(val, 5) for val in self.token_latencies._values()],
          "context_tokens": self.context_tokens._values(),
          "generated_tokens": self.generated_tokens._values(),
          "utilizations": self.utilizations._values(),
