@@ -78,6 +78,7 @@ def load(args):
         "clients": args.clients,
         "requests": args.requests,
         "duration": args.duration,
+        "run_end_condition_mode": args.run_end_condition_mode,
         "rate": args.rate,
         "aggregation_window": args.aggregation_window,
         "context_generation_method": args.context_generation_method,
@@ -136,6 +137,15 @@ def load(args):
             path=args.replay_path,
         )
 
+    if args.run_end_condition_mode == "and":
+        logging.info(
+            f"run-end-condition-mode='{args.run_end_condition_mode}' - run will not end until BOTH the `requests` and `duration` limits are reached"
+        )
+    else:
+        logging.info(
+            f"run-end-condition-mode='{args.run_end_condition_mode}' - run will end when EITHER the `requests` and `duration` limits are reached"
+        )
+
     request_builder = _RequestBuilder(
         messages_generator=messages_generator,
         max_tokens=max_tokens,
@@ -158,6 +168,7 @@ def load(args):
         request_count=args.requests,
         duration=args.duration,
         aggregation_duration=args.aggregation_window,
+        run_end_condition_mode=args.run_end_condition_mode,
         json_output=args.output_format == "jsonl",
     )
 
@@ -171,6 +182,7 @@ def _run_load(
     duration=None,
     aggregation_duration=60,
     request_count=None,
+    run_end_condition_mode="or",
     json_output=False,
 ):
     aggregator = _StatsAggregator(
@@ -203,7 +215,7 @@ def _run_load(
     )
 
     aggregator.start()
-    executer.run(call_count=request_count, duration=duration)
+    executer.run(call_count=request_count, duration=duration, run_end_condition_mode=run_end_condition_mode)
     aggregator.stop()
 
     logging.info("finished load test")
@@ -222,6 +234,8 @@ def _validate(args):
         raise ValueError("requests must be > 0")
     if args.duration is not None and args.duration != 0 and args.duration < 30:
         raise ValueError("duration must be > 30")
+    if args.run_end_condition_mode not in ("and", "or"):
+        raise ValueError("run-end-condition-mode must be one of: ['and', 'or']")
     if args.rate is not None and args.rate < 0:
         raise ValueError("rate must be > 0")
     if args.context_generation_method == "replay":

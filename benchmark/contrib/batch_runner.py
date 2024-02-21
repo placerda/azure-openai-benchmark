@@ -74,6 +74,12 @@ def parse_args():
         help="Minimum number of requests to include in each benchmark run.",
     )
     parser.add_argument(
+        "--run-end-condition-mode",
+        type=str,
+        help="Determines whether both the `requests` and `duration` args must be reached before ending the run ('and'), or whether to end the run either either arg is reached ('or'). Defaults to 'or'.",
+        choices=["and", "or"],
+    )
+    parser.add_argument(
         "--clients",
         type=int,
         default="20",
@@ -127,19 +133,6 @@ def parse_args():
         default="2023-05-15",
         help="Set OpenAI API version.",
     )
-    # parser.add_argument(
-    #     "--cold-start-warmup",
-    #     type=int,
-    #     default=0,
-    #     help="Seconds to run load through the endpoint prior to any actual testing. Defaults to 0.",
-    # )
-    # parser.add_argument(
-    #     "--replay-path",
-    #     type=str,
-    #     default="generation",
-    #     help="Method to use for context generation method. Defaults to generation.",
-    #     choices=["generation", "replay"],
-    # )
     parser.add_argument(
         "--num-batches",
         type=int,
@@ -167,6 +160,7 @@ def context_generation_run_to_exec_str(
     rate: Optional[float] = None,
     duration: Optional[int] = None,
     requests: Optional[int] = None,
+    run_end_condition_mode: Optional[str] = None,
     frequency_penalty: Optional[float] = None,
     presence_penalty: Optional[float] = None,
     temperature: Optional[float] = None,
@@ -189,6 +183,8 @@ def context_generation_run_to_exec_str(
         cmd += f" --duration {duration}"
     if requests is not None:
         cmd += f" --requests {requests}"
+    if run_end_condition_mode is not None:
+        cmd += f" --run-end-condition-mode {run_end_condition_mode}"
     if log_save_dir is not None:
         cmd += f" --log-save-dir {log_save_dir}"
     if frequency_penalty is not None:
@@ -263,6 +259,7 @@ def run_context_generation_batch(
     aggregation_window: int,
     duration: Optional[int],
     requests: Optional[int],
+    run_end_condition_mode: str,
     clients: Optional[int],
     log_save_dir: str,
     prevent_server_caching: bool,
@@ -283,6 +280,7 @@ def run_context_generation_batch(
     :param aggregation_window: Period of time over which to aggregate run statistcs.
     :param duration: Duration of each run.
     :param requests: Max number of requests in each run.
+    :param run_end_condition_mode: Determines whether both the `requests` and `duration` args must be reached before ending the run ('and'), or whether to end the run either either arg is reached ('or'). Defaults to 'or'.
     :param clients: Number of clients to use in each test.
     :param log_save_dir: Will save all logs to this directory.
     :param prevent_server_caching: Whether to prevent server caching in each test.
@@ -377,6 +375,7 @@ def run_context_generation_batch(
             aggregation_window=aggregation_window,
             duration=duration,
             requests=requests,
+            run_end_condition_mode=run_end_condition_mode,
             clients=clients,
             prevent_server_caching=prevent_server_caching,
             retry=retry,
@@ -431,6 +430,7 @@ def main():
                 aggregation_window=args.aggregation_window,
                 duration=args.duration,
                 requests=args.requests,
+                run_end_condition_mode=args.run_end_condition_mode,
                 clients=args.clients,
                 log_save_dir=args.log_save_dir,
                 prevent_server_caching=args.prevent_server_caching,
@@ -466,6 +466,7 @@ def main():
                     aggregation_window=args.aggregation_window,
                     duration=args.duration,
                     requests=args.requests,
+                    run_end_condition_mode=args.run_end_condition_mode,
                     clients=args.clients,
                     log_save_dir=args.log_save_dir,
                     prevent_server_caching=args.prevent_server_caching,
