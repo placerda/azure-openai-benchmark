@@ -240,7 +240,7 @@ def run_benchmark_exec_str(
                         )
                         process.kill()
             # Kill process if run draining has occurred. Make sure to kill process after one more line of stats has been logged.
-            if draining_started:
+            if kill_when_draining_begins and draining_started:
                 print(
                     "Draining detected and final stats are logged - terminating process immediately."
                 )

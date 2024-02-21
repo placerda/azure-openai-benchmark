@@ -139,11 +139,11 @@ def load(args):
 
     if args.run_end_condition_mode == "and":
         logging.info(
-            f"run-end-condition-mode='{args.run_end_condition_mode}' - run will not end until BOTH the `requests` and `duration` limits are reached"
+            f"run-end-condition-mode='{args.run_end_condition_mode}': run will not end until BOTH the `requests` and `duration` limits are reached"
         )
     else:
         logging.info(
-            f"run-end-condition-mode='{args.run_end_condition_mode}' - run will end when EITHER the `requests` and `duration` limits are reached"
+            f"run-end-condition-mode='{args.run_end_condition_mode}': run will end when EITHER the `requests` or `duration` limit is reached"
         )
 
     request_builder = _RequestBuilder(
