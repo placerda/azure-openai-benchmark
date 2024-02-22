@@ -149,7 +149,7 @@ class ReplayMessagesGenerator(BaseMessagesGenerator):
     def __init__(self, model: str, prevent_server_caching: bool, path: str):
         super().__init__(model, prevent_server_caching)
         # Load messages from file, checking structure
-        logging.info("loading replay messages from file...")
+        logging.info(f"loading replay messages from {path}...")
         try:
             with open(path, "r") as f:
                 all_messages_lists = json.load(f)
@@ -176,7 +176,7 @@ class ReplayMessagesGenerator(BaseMessagesGenerator):
             self._cached_messages_and_tokens.append((messages, messages_tokens))
 
         logging.info(
-            f"replay messages successfully loaded. average context tokens: {round(np.mean([x[1] for x in self._cached_messages_and_tokens]))}"
+            f"replay messages successfully loaded. average number of context_tokens across all messages: {round(np.mean([x[1] for x in self._cached_messages_and_tokens]))}"
         )
 
     def generate_messages(self) -> Tuple[Dict[str, str], int]:
