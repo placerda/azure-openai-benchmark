@@ -22,7 +22,7 @@ import os
 import shlex
 import subprocess
 import time
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Union
 
 from requests import post
 
@@ -255,7 +255,7 @@ def run_benchmark_exec_str(
 def run_context_generation_batch(
     api_base_endpoint: str,
     deployment: str,
-    token_rate_workload_list: Iterable[tuple[int, int, float]],
+    token_rate_workload_list: Iterable[tuple[int, int, Union[None, float]]],
     aggregation_window: int,
     duration: Optional[int],
     requests: Optional[int],
@@ -406,10 +406,10 @@ def main():
         context_tokens = int(split_vals[0])
         max_tokens = int(split_vals[1])
         if split_vals[2].lower() == "none":
-            rate = "none"
+            rate = None
         else:
             rate = float(split_vals[2])
-            token_rate_workload_list.append((context_tokens, max_tokens, rate))
+        token_rate_workload_list.append((context_tokens, max_tokens, rate))
 
     api_base_endpoint = args.api_base_endpoint[0]
 
