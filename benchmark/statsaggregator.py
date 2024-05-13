@@ -58,37 +58,30 @@ class _StatsAggregator(threading.Thread):
    generated_tokens = _Samples()
    utilizations = _Samples()
 
-   def __init__(self, clients:int, dump_duration:float=5, window_duration:float=60, expected_gen_tokens: Optional[int] = None, json_output=False, *args,**kwargs):
+   raw_stat_dicts = list()
+
+   def __init__(self, clients:int, dump_duration:float=5, window_duration:float=60, expected_gen_tokens: Optional[int] = None, json_output:bool=False, log_request_content:bool=False, *args,**kwargs):
       """
       :param clients: number of clients being used in testing.
       :param dump_duration: duration in seconds to dump current aggregates.
       :param window_duration: duration of sliding window in second to consider for aggregation.
       :param expected_gen_tokens: number of tokens expected in each response.
       :param json_output: whether to dump periodic stats as json or human readable.
+      :param log_request_content: whether to log request content in the raw call stat output.
       """
       self.clients = clients
       self.dump_duration = dump_duration
-      self.json_output = json_output
       self.window_duration = window_duration
       self.expected_gen_tokens = expected_gen_tokens
+      self.json_output = json_output
+      self.log_request_content = log_request_content
 
       super(_StatsAggregator, self).__init__(*args, **kwargs)
 
 
    def dump_raw_call_stats(self):
       """Dumps raw stats for each individual call within the aggregation window"""
-      samples = {
-         "request_timestamps": [round(val, 4) for val in self.request_timestamps._values()],
-         "request_latency": [round(val, 4) for val in self.request_latency._values()],
-         "call_tries": self.call_tries._values(),
-         "response_latencies": [round(val, 4) for val in self.response_latencies._values()],
-         "first_token_latencies": [round(val, 4) for val in self.first_token_latencies._values()],
-         "token_latencies": [round(val, 5) for val in self.token_latencies._values()],
-         "context_tokens": self.context_tokens._values(),
-         "generated_tokens": self.generated_tokens._values(),
-         "utilizations": self.utilizations._values(),
-      }
-      logger.info(f"All data samples: {json.dumps(samples)}")
+      logger.info(f"Raw call stats: {json.dumps(self.raw_stat_dicts)}")
 
    def run(self):
       """
@@ -142,6 +135,8 @@ class _StatsAggregator(threading.Thread):
             self.generated_tokens._append(stats.request_start_time, stats.generated_tokens)
          if stats.deployment_utilization is not None:
             self.utilizations._append(stats.request_start_time, stats.deployment_utilization)
+         # Save raw stat for the call
+         self.raw_stat_dicts.append(stats.as_dict(include_request_content=self.log_request_content))
 
    def _dump(self):
       with self.lock:
