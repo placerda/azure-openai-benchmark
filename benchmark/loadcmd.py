@@ -1,13 +1,14 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
+import json
 import logging
 import os
 import sys
-import json
 from typing import Iterable, Iterator
 
 import aiohttp
+import requests
 
 from benchmark.messagegeneration import (
     BaseMessagesGenerator,
@@ -106,13 +107,20 @@ def load(args):
     logging.info("Load test args: " + converted)
 
     api_key = os.getenv(args.api_key_env)
+    if not api_key:
+        raise ValueError(f"API key is not set - make sure to set the environment variable '{args.api_key_env}'")
     # Check if endpoint is openai.com, otherwise we will assume it is Azure OpenAI
     is_openai_com_endpoint = "openai.com" in args.api_base_endpoint[0]
     # Set URL
     if is_openai_com_endpoint:
         url = args.api_base_endpoint[0]
     else:
-        url = args.api_base_endpoint[0] + "/openai/deployments/" + args.deployment + "/chat/completions"
+        url = (
+            args.api_base_endpoint[0]
+            + "/openai/deployments/"
+            + args.deployment
+            + "/chat/completions"
+        )
         url += "?api-version=" + args.api_version
 
     rate_limiter = NoRateLimiter()
@@ -120,6 +128,25 @@ def load(args):
         rate_limiter = RateLimiter(args.rate, 60)
 
     max_tokens = args.max_tokens
+    # Check model name in order to correctly estimate tokens
+    if is_openai_com_endpoint:
+        model = args.deployment
+    else:
+        model_check_headers = {
+            "api-key": api_key,
+            "Content-Type": "application/json",
+        }
+        model_check_body = {"messages": [{"content": "What is 1+1?", "role": "user"}]}
+        response = requests.post(
+            url, headers=model_check_headers, json=model_check_body
+        )
+        if response.status_code != 200:
+            raise ValueError(
+                f"Deployment check failed with status code {response.status_code}. Reason: {response.reason}. Data: {response.text}"
+            )
+        model = response.json()["model"]
+    logging.info(f"model detected: {model}")
+
     if args.context_generation_method == "generate":
         context_tokens = args.context_tokens
         if args.shape_profile == "balanced":
@@ -136,7 +163,7 @@ def load(args):
             f"using random messages generation with shape profile {args.shape_profile}: context tokens: {context_tokens}, max tokens: {max_tokens}"
         )
         messages_generator = RandomMessagesGenerator(
-            model="gpt-4-0613",
+            model=model,
             prevent_server_caching=args.prevent_server_caching,
             tokens=context_tokens,
             max_tokens=max_tokens,
@@ -144,7 +171,7 @@ def load(args):
     if args.context_generation_method == "replay":
         logging.info(f"replaying messages from {args.replay_path}")
         messages_generator = ReplayMessagesGenerator(
-            model="gpt-4-0613",
+            model=model,
             prevent_server_caching=args.prevent_server_caching,
             path=args.replay_path,
         )
@@ -183,8 +210,9 @@ def load(args):
         aggregation_duration=args.aggregation_window,
         run_end_condition_mode=args.run_end_condition_mode,
         json_output=args.output_format == "jsonl",
-        log_request_content=args.log_request_content
+        log_request_content=args.log_request_content,
     )
+
 
 def _run_load(
     request_builder: Iterable[dict],
@@ -198,18 +226,19 @@ def _run_load(
     request_count=None,
     run_end_condition_mode="or",
     json_output=False,
-    log_request_content=False
+    log_request_content=False,
 ):
     aggregator = _StatsAggregator(
         window_duration=aggregation_duration,
-        dump_duration=1, 
+        dump_duration=1,
         expected_gen_tokens=request_builder.max_tokens,
         clients=max_concurrency,
         json_output=json_output,
-        log_request_content=log_request_content)
+        log_request_content=log_request_content,
+    )
     requester = OAIRequester(api_key, url, backoff=backoff)
 
-    async def request_func(session:aiohttp.ClientSession):
+    async def request_func(session: aiohttp.ClientSession):
         nonlocal aggregator
         nonlocal requester
         request_body, messages_tokens = request_builder.__next__()
@@ -222,16 +251,23 @@ def _run_load(
             print(e)
 
     def finish_run_func():
-      """Function to run when run is finished."""
-      nonlocal aggregator
-      aggregator.dump_raw_call_stats()
+        """Function to run when run is finished."""
+        nonlocal aggregator
+        aggregator.dump_raw_call_stats()
 
     executer = AsyncHTTPExecuter(
-        request_func, rate_limiter=rate_limiter, max_concurrency=max_concurrency, finish_run_func=finish_run_func
+        request_func,
+        rate_limiter=rate_limiter,
+        max_concurrency=max_concurrency,
+        finish_run_func=finish_run_func,
     )
 
     aggregator.start()
-    executer.run(call_count=request_count, duration=duration, run_end_condition_mode=run_end_condition_mode)
+    executer.run(
+        call_count=request_count,
+        duration=duration,
+        run_end_condition_mode=run_end_condition_mode,
+    )
     aggregator.stop()
 
     logging.info("finished load test")
