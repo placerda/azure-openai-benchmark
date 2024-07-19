@@ -175,9 +175,9 @@ def main():
         description="CLI for combining existing log files."
     )
     parser.add_argument(
-        "source-dir", type=str, help="Directory containing the log files."
+        "source_dir", type=str, help="Directory containing the log files."
     )
-    parser.add_argument("save-path", type=str, help="Path to save the output CSV.")
+    parser.add_argument("save_path", type=str, help="Path to save the output CSV.")
     parser.add_argument(
         "--include-raw-request-info",
         action="store_true",
