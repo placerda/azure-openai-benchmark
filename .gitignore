@@ -12,6 +12,7 @@ benchmark.parameters
 __pycache__/
 *.py[cod]
 *$py.class
+*.err
 
 # C extensions
 *.so
