@@ -9,3 +9,8 @@ aiohttp
 pandas
 pillow
 ping3
+ipykernel
+matplotlib
+nbstripout
+seaborn
+tabulate
