@@ -4,7 +4,7 @@
 source benchmark.parameters
 
 # Run the command
-python -m azure-openai-benchmark.benchmark.bench load \
+python -m benchmark.bench load \
   --deployment $AOAI_DEPLOYMENT \
   --rate $RATE \
   --shape-profile custom \

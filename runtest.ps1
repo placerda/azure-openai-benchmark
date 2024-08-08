@@ -22,7 +22,7 @@ if (Test-Path $parametersPath) {
 }
 
 # Example usage: now you can access these variables in your script
-$command = "python -m azure-openai-benchmark.benchmark.bench load " +
+$command = "python -m benchmark.bench load " +
            "--deployment $env:AOAI_DEPLOYMENT " +
            "--rate $env:RATE " +
            "--shape-profile custom " +
