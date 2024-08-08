@@ -6,3 +6,4 @@ analysis_outputs
 .vscode
 contrib/prepare_custom_messages/messages_data/*
 *.log
+benchmark.parameters
