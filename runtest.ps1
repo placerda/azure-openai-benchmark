@@ -31,9 +31,8 @@ $command = "python -m benchmark.bench load " +
            "--retry $env:RETRY " +
            "$env:AOAI_ENDPOINT " +
            "--duration $env:DURATION " +
-           "--output-format jsonl"
-
-$errorFilePath = "$env:TEST_NAME-error.log"
+           "--output-format jsonl" +
+           "--log-save-dir logs/"
 
 # Run the command
-Invoke-Expression "$command | Tee-Object -FilePath $($env:TEST_NAME).log 2> $errorFilePath"
+Invoke-Expression "$command"
